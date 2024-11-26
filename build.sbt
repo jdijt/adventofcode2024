@@ -4,7 +4,8 @@ ThisBuild / organization := "eu.derfniw"
 
 lazy val root = (project in file("."))
   .settings(name := "AoC2024")
-  .aggregate(util.project +: solutions.refs: _*)
+  .aggregate(util)
+  .aggregate(solutions.refs: _*)
 
 lazy val util = (project in file("util"))
   .settings(commonSettings)
