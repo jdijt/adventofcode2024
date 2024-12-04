@@ -1,6 +1,6 @@
 package eu.derfniw.aoc2024.day01
 
-import eu.derfniw.aoc2024.util.InputReader
+import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
 import scala.math.abs
 
@@ -23,5 +23,5 @@ def part2(input: Seq[String]): Int =
 
 @main
 def day01(): Unit =
-  println(s"Part 1: ${part1(Inputs.mainInput)}")
-  println(s"Part 2: ${part2(Inputs.mainInput)}")
+  println(s"Part 1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part 2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")

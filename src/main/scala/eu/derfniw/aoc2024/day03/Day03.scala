@@ -1,6 +1,6 @@
 package eu.derfniw.aoc2024.day03
 
-import eu.derfniw.aoc2024.util.InputReader
+import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
 enum Instruction:
   case Mul(a: Int, b: Int)
@@ -43,5 +43,5 @@ object Inputs extends InputReader(3)
 
 @main
 def day03(): Unit =
-  println(s"Part 1: ${part1(Inputs.mainInput)}")
-  println(s"Part 2: ${part2(Inputs.mainInput)}")
+  println(s"Part 1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part 2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")

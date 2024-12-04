@@ -1,6 +1,6 @@
 package eu.derfniw.aoc2024.day02
 
-import eu.derfniw.aoc2024.util.InputReader
+import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
 import scala.math.abs
 
@@ -32,12 +32,12 @@ def part1(input: Seq[String]): Int =
 def part2(input: Seq[String]): Int =
   val parsed = input.map(_.split(" ").map(_.toInt).toSeq)
   parsed.count(report =>
-    val alternatives = report.indices.map(idx => report.patch(idx, Nil, 1)) :+ report
+    val alternatives = report +: report.indices.view.map(idx => report.patch(idx, Nil, 1))
     alternatives.exists(isReportSafe)
   )
 end part2
 
 @main
 def day02(): Unit =
-  println(s"Part 1: ${part1(Inputs.mainInput)}")
-  println(s"Part 2: ${part2(Inputs.mainInput)}")
+  println(s"Part 1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part 2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")
