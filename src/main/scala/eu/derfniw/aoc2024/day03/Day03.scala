@@ -38,6 +38,7 @@ def part2(input: Seq[String]): Int =
     }
     .foldLeft(ComputingState.initial)(_.apply(_))
     .acc
+end part2
 
 object Inputs extends InputReader(3)
 

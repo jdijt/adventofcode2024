@@ -34,6 +34,7 @@ extension (g: Seq[String])
       // / == MAS | SAM
       && (g(y + 1)(x - 1) == 'M' && g(y - 1)(x + 1) == 'S' || g(y + 1)(x - 1) == 'S' && g(y - 1)(x + 1) == 'M')
   }.getOrElse(false)
+end extension
 
 def part1(input: Seq[String]): Int =
   val indexedInput = input.toIndexedSeq
