@@ -5,5 +5,8 @@ ThisBuild / organization := "eu.derfniw"
 lazy val root = (project in file("."))
   .settings(name := "AoC2024")
   .settings(
-    libraryDependencies += "org.scalameta" %% "munit" % "1.0.2" % Test
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+      "org.scalameta"          %% "munit"                      % "1.0.3" % Test
+    )
   )

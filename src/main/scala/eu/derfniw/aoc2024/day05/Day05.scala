@@ -19,15 +19,16 @@ end parseInput
 
 extension (m: Manual)
   def isCorrect(rules: Set[Rule]): Boolean =
-    // This method assumes there are no duplicate pages!
+    // This method assumes there are no duplicate pages
     m.combinations(2).forall { case Seq(a, b) => rules.contains(a -> b) }
 
   def middlePage: Int = m(m.length / 2)
 
   def repairMistake(rules: Set[Rule]): Manual =
-    // This method assumes that if "a -> b" rule is missing, then "b -> a" is not.
+    // As isCorrect, this assumes there are no duplicate pages
     val indexedPagePairs = m.zipWithIndex.combinations(2).map { case Seq(a, b) => a -> b }
     // Find the first mistake:
+    // This method assumes that if "a -> b" rule is missing, then "b -> a" is not.
     indexedPagePairs.find { case ((x1, _), (x2, _)) => !rules.contains(x1 -> x2) } match
       case Some(((v1, i1), (v2, i2))) => m.updated(i1, v2).updated(i2, v1)
       case None                       => m
