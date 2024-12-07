@@ -22,17 +22,31 @@ extension (g: Seq[String])
       // In the following cases we read in reverse again, so these
       // Similar reason as above, we need to offset the index by 1 due to reversal,
       // This is also why '3-idx' for x, instead of 4.
-      Try(g.slice(y - 3, y + 1).zipWithIndex.map((row, idx) => row.charAt(x + (3 - idx))).mkString.reverse),
-      Try(g.slice(y - 3, y + 1).zipWithIndex.map((row, idx) => row.charAt(x - (3 - idx))).mkString.reverse)
+      Try(
+        g.slice(y - 3, y + 1)
+          .zipWithIndex
+          .map((row, idx) => row.charAt(x + (3 - idx)))
+          .mkString
+          .reverse
+      ),
+      Try(
+        g.slice(y - 3, y + 1)
+          .zipWithIndex
+          .map((row, idx) => row.charAt(x - (3 - idx)))
+          .mkString
+          .reverse
+      )
     ).flatMap(_.toOption).count(w => w == "XMAS")
 
   def isCross(x: Int, y: Int): Boolean = Try {
     if g(y)(x) != 'A' then false
     else
       // \ == MAS | SAM
-      (g(y - 1)(x - 1) == 'M' && g(y + 1)(x + 1) == 'S' || g(y - 1)(x - 1) == 'S' && g(y + 1)(x + 1) == 'M')
+      (g(y - 1)(x - 1) == 'M' && g(y + 1)(x + 1) == 'S'
+        || g(y - 1)(x - 1) == 'S' && g(y + 1)(x + 1) == 'M')
       // / == MAS | SAM
-      && (g(y + 1)(x - 1) == 'M' && g(y - 1)(x + 1) == 'S' || g(y + 1)(x - 1) == 'S' && g(y - 1)(x + 1) == 'M')
+      && (g(y + 1)(x - 1) == 'M' && g(y - 1)(x + 1) == 'S'
+        || g(y + 1)(x - 1) == 'S' && g(y - 1)(x + 1) == 'M')
   }.getOrElse(false)
 end extension
 

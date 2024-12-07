@@ -15,11 +15,13 @@ enum Direction:
     case Direction.Left  => Direction.Up
 
 class Grid(grid: IndexedSeq[IndexedSeq[Boolean]]):
-  val ySize = grid.size
-  val xSize = grid.headOption.map(_.size).getOrElse(0)
+  private val ySize = grid.size
+  private val xSize = grid.headOption.map(_.size).getOrElse(0)
+
+  def isObstacle(p: Point): Boolean = isOnGrid(p) && grid(p.y)(p.x)
 
   def isOnGrid(p: Point): Boolean   = p.x >= 0 && p.x < xSize && p.y >= 0 && p.y < ySize
-  def isObstacle(p: Point): Boolean = isOnGrid(p) && grid(p.y)(p.x)
+
   def withObstacle(p: Point): Grid  = Grid(grid.updated(p.y, grid(p.y).updated(p.x, true)))
 
   def allPoints: List[Point] =
@@ -42,7 +44,13 @@ case class Guard(loc: Point, direction: Direction, locationsVisited: Set[Point],
     val newLoc = loc.next(direction)
     if grid.isObstacle(newLoc) then copy(direction = direction.rotateLeft)
     else if !grid.isOnGrid(newLoc) then copy(loc = newLoc, isOngrid = false)
-    else copy(loc = newLoc, locationsVisited = locationsVisited + newLoc, isOngrid = grid.isOnGrid(newLoc))
+    else
+      copy(
+        loc = newLoc,
+        locationsVisited = locationsVisited + newLoc,
+        isOngrid = grid.isOnGrid(newLoc)
+      )
+  end step
 
   @tailrec
   final def walkRoute(grid: Grid): Guard =
@@ -90,7 +98,7 @@ def part1(input: Seq[String]): Int =
 
 def part2(input: Seq[String]): Int =
   val (grid, guardLocation) = parseInput(input)
-  val part2Guard            = Part2Guard(guardLocation, Direction.Up, Set((guardLocation, Direction.Up)), true)
+  val part2Guard = Part2Guard(guardLocation, Direction.Up, Set((guardLocation, Direction.Up)), true)
   grid.allPoints.par.count { loc =>
     if grid.isObstacle(loc) then false
     else
