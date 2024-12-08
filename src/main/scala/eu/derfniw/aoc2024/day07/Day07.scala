@@ -2,7 +2,7 @@ package eu.derfniw.aoc2024.day07
 
 import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
-case class Equation(solution: Long, expression: List[Long]):
+class Equation(val solution: Long, val expression: List[Long]):
 
   def isSolvable: Boolean =
     def helper(expression: List[Long]): Boolean = expression match
@@ -28,7 +28,7 @@ case class Equation(solution: Long, expression: List[Long]):
 end Equation
 
 object Equation:
-  private val lineRegex = """(\d+): ((?:\d+ ?)+)""".r
+  private val lineRegex = """^(\d+): ((?:\d+ )*\d+)$""".r
   def parse(input: String): Equation = input match
     case lineRegex(solution, expression) =>
       Equation(solution.toLong, expression.split(" ").map(_.toLong).toList)
