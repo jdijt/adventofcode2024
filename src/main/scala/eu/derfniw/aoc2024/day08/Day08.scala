@@ -8,49 +8,47 @@ class Grid(input: Seq[String]):
   private val ySize: Int = input.size
   private val xSize: Int = input.headOption.map(_.length).getOrElse(0)
 
-  private val antannae: Map[Char, List[Point]] = input.zipWithIndex
+  private val antennaePairs: Set[(Point, Point)] = input.zipWithIndex
     .flatMap { (line, y) =>
       line.zipWithIndex.collect {
         case (c, x) if c != '.' => c -> Point(x, y)
       }
     }
     .groupBy(_._1)
-    .view
-    .mapValues(_.map(_._2).toList)
-    .toMap
+    .values
+    .flatMap(_.map(_._2).combinations(2).map { case a +: b +: _ => a -> b })
+    .toSet
 
-  private def isOnGrid(p: Point): Boolean =
+  private inline def isOnGrid(p: Point): Boolean =
     p.x >= 0 && p.x < xSize && p.y >= 0 && p.y < ySize
 
   def countAntiNodes(): Int =
     val allAntiNodes = for
-      antennaGroup            <- antannae.values
-      Seq(antenna1, antenna2) <- antennaGroup.combinations(2)
+      (antenna1, antenna2) <- antennaePairs
       xDiff = antenna1.x - antenna2.x
       yDiff = antenna1.y - antenna2.y
-      antinode <- Seq(
+      antiNode <- Seq(
                     Point(antenna1.x + xDiff, antenna1.y + yDiff),
                     Point(antenna2.x - xDiff, antenna2.y - yDiff)
                   ).filter(isOnGrid)
-    yield antinode
+    yield antiNode
 
-    allAntiNodes.toSet.size
+    allAntiNodes.size
   end countAntiNodes
 
   def countAntiNodes2(): Int =
-    def antiNodes(xDiff: Int, yDiff: Int, start: Point): LazyList[Point] =
-      start #:: antiNodes(xDiff, yDiff, Point(start.x + xDiff, start.y + yDiff))
+    def antiNodes(xDiff: Int, yDiff: Int, start: Point): List[Point] =
+      if !isOnGrid(start) then Nil
+      else start :: antiNodes(xDiff, yDiff, Point(start.x + xDiff, start.y + yDiff))
 
     val allAntiNodes = for
-      antennaGroup            <- antannae.values
-      Seq(antenna1, antenna2) <- antennaGroup.combinations(2)
+      (antenna1, antenna2) <- antennaePairs
       xDiff = antenna1.x - antenna2.x
       yDiff = antenna1.y - antenna2.y
-      antinode <- antiNodes(xDiff, yDiff, antenna1).takeWhile(isOnGrid)
-                    ++ antiNodes(-xDiff, -yDiff, antenna2).takeWhile(isOnGrid)
-    yield antinode
+      antiNode <- antiNodes(xDiff, yDiff, antenna1) ++ antiNodes(-xDiff, -yDiff, antenna2)
+    yield antiNode
 
-    allAntiNodes.toSet.size
+    allAntiNodes.size
   end countAntiNodes2
 end Grid
 
