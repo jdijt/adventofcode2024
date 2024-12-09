@@ -3,7 +3,7 @@ package eu.derfniw.aoc2024.day09
 import eu.derfniw.aoc2024.day09.FsContent.{File, Free}
 import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
-import scala.annotation.tailrec
+import scala.collection.mutable
 
 type CompactFs  = IndexedSeq[FsContent]
 type ExpandedFs = IndexedSeq[BlockContent]
@@ -32,15 +32,6 @@ extension (c: CompactFs)
     case FsContent.File(_, id) => id
     case _                     => throw new RuntimeException("Unexpected empty")
 
-  def fileById(fileId: Int): (FsContent.File, Int) =
-    c.zipWithIndex
-      .find {
-        case (FsContent.File(_, id), _) => id == fileId
-        case _                          => false
-      }
-      .get
-      .asInstanceOf[(FsContent.File, Int)]
-
   def findFreeBlock(minSize: Int, maxIndex: Int): Option[(FsContent.Free, Int)] =
     c.zipWithIndex
       .filter(_._2 < maxIndex)
@@ -50,40 +41,51 @@ extension (c: CompactFs)
       }
       .asInstanceOf[Option[(FsContent.Free, Int)]]
 
-  @tailrec
-  private def _deFragment(fileId: Int): CompactFs =
-    if fileId < 0 then c
-    else
-      val (file, fileLocation) = c.fileById(fileId)
-
-      val newFs = findFreeBlock(file.size, fileLocation) match
-        case Some((freeBlock, freeBlockLocation)) =>
-          val newFilePatch =
-            if file.size < freeBlock.size then Seq(file, FsContent.Free(freeBlock.size - file.size))
-            else Seq(file)
-          c.updated(fileLocation, FsContent.Free(file.size))
-            .patch(freeBlockLocation, newFilePatch, 1)
-
-        case _ => c
-      newFs._deFragment(fileId - 1)
-
   def deFragment(): CompactFs =
-    val lastFileId = c.lastFileId
-    c._deFragment(lastFileId)
+    val mutableFs = mutable.ArrayDeque.from(c)
+    for x <- c.lastFileId to 0 by -1 do
+      val fileLocation = mutableFs.lastIndexWhere {
+        case FsContent.File(_, id) if id == x => true
+        case _                                => false
+      }
+      val file = mutableFs(fileLocation).asInstanceOf[FsContent.File]
+      val freeLocation = mutableFs.slice(0, fileLocation).indexWhere {
+        case FsContent.Free(size) if size >= file.size => true
+        case _                                         => false
+      }
+      if freeLocation != -1 then
+        val freeBlock = mutableFs(freeLocation).asInstanceOf[FsContent.Free]
+        val newFilePatch =
+          if file.size < freeBlock.size then Seq(file, FsContent.Free(freeBlock.size - file.size))
+          else Seq(file)
+        mutableFs.update(fileLocation, FsContent.Free(file.size))
+        mutableFs.patchInPlace(freeLocation, newFilePatch, 1)
+      end if
+    end for
+    mutableFs.toIndexedSeq
+  end deFragment
 end extension
 
 extension (c: ExpandedFs)
-  @tailrec
-  private def _compactBlocks(leftCursor: Int, rightCursor: Int): ExpandedFs =
-    val firstEmptyBlock = c.indexWhere(_ == BlockContent.Empty, leftCursor)
-    val lastFileBlock   = c.lastIndexWhere(_ != BlockContent.Empty, rightCursor)
-    if firstEmptyBlock > lastFileBlock then c
-    else
-      c.updated(firstEmptyBlock, c(lastFileBlock))
-        .updated(lastFileBlock, BlockContent.Empty)
-        ._compactBlocks(firstEmptyBlock + 1, lastFileBlock - 1)
-
-  def compactBlocks(): ExpandedFs = _compactBlocks(0, c.length - 1)
+  def compactBlocks(): ExpandedFs =
+    val mutableFs   = mutable.IndexedSeq.from(c)
+    var leftCursor  = 0
+    var rightCursor = c.length - 1
+    while leftCursor < rightCursor do
+      (mutableFs(leftCursor), mutableFs(rightCursor)) match
+        case (BlockContent.Empty, BlockContent.Empty) =>
+          rightCursor -= 1
+        case (BlockContent.Empty, BlockContent.File(_)) =>
+          mutableFs(leftCursor) = mutableFs(rightCursor)
+          mutableFs(rightCursor) = BlockContent.Empty
+          leftCursor += 1
+          rightCursor -= 1
+        case (BlockContent.File(_), _) =>
+          leftCursor += 1
+      end match
+    end while
+    mutableFs.toIndexedSeq
+  end compactBlocks
 
   def checkSum(): Long =
     c.zipWithIndex.foldLeft(0L) {
