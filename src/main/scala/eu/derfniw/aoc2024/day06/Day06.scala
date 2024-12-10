@@ -20,9 +20,9 @@ class Grid(grid: IndexedSeq[IndexedSeq[Boolean]]):
 
   def isObstacle(p: Point): Boolean = isOnGrid(p) && grid(p.y)(p.x)
 
-  def isOnGrid(p: Point): Boolean   = p.x >= 0 && p.x < xSize && p.y >= 0 && p.y < ySize
+  def isOnGrid(p: Point): Boolean = p.x >= 0 && p.x < xSize && p.y >= 0 && p.y < ySize
 
-  def withObstacle(p: Point): Grid  = Grid(grid.updated(p.y, grid(p.y).updated(p.x, true)))
+  def withObstacle(p: Point): Grid = Grid(grid.updated(p.y, grid(p.y).updated(p.x, true)))
 
   def allPoints: List[Point] =
     (0 until ySize).flatMap { y =>

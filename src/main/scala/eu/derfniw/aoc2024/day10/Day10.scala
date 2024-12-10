@@ -15,11 +15,6 @@ class Map(val grid: IndexedSeq[IndexedSeq[Int]]):
     row.zipWithIndex.collect { case (0, x) => Point(x, y) }
   }
 
-  def heightAt(point: Point): Int = if isOnGrid(point) then grid(point.y)(point.x) else 0
-
-  def isOnGrid(point: Point): Boolean =
-    point.x >= 0 && point.x < xSize && point.y >= 0 && point.y < ySize
-
   def trailHeadScore(trailHead: Point): Int =
     val peaksFound = collection.mutable.Set.empty[Point]
     val visited    = collection.mutable.Set(trailHead)
@@ -38,6 +33,11 @@ class Map(val grid: IndexedSeq[IndexedSeq[Int]]):
     end while
     peaksFound.size
   end trailHeadScore
+
+  def heightAt(point: Point): Int = if isOnGrid(point) then grid(point.y)(point.x) else 0
+
+  def isOnGrid(point: Point): Boolean =
+    point.x >= 0 && point.x < xSize && point.y >= 0 && point.y < ySize
 
   // Regular recursion is fine because know depth of trail is never more than 9 steps.
   def trailHeadScore2(trailHead: Point): Int =

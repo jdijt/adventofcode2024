@@ -19,9 +19,6 @@ class Grid(input: Seq[String]):
     .flatMap(_.map(_._2).combinations(2).map { case a +: b +: _ => a -> b })
     .toSet
 
-  private inline def isOnGrid(p: Point): Boolean =
-    p.x >= 0 && p.x < xSize && p.y >= 0 && p.y < ySize
-
   def countAntiNodes(): Int =
     val allAntiNodes = for
       (antenna1, antenna2) <- antennaePairs
@@ -35,6 +32,9 @@ class Grid(input: Seq[String]):
 
     allAntiNodes.size
   end countAntiNodes
+
+  private inline def isOnGrid(p: Point): Boolean =
+    p.x >= 0 && p.x < xSize && p.y >= 0 && p.y < ySize
 
   def countAntiNodes2(): Int =
     def antiNodes(xDiff: Int, yDiff: Int, start: Point): List[Point] =
