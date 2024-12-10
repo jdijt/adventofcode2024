@@ -2,7 +2,10 @@ package eu.derfniw.aoc2024.day10
 
 import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
-case class Point(x: Int, y: Int)
+case class Point(x: Int, y: Int):
+
+  def getNeighbours: Seq[Point] =
+    Seq(Point(x, y - 1), Point(x, y + 1), Point(x - 1, y), Point(x + 1, y))
 
 class Map(val grid: IndexedSeq[IndexedSeq[Int]]):
   private val ySize = grid.size
@@ -26,13 +29,7 @@ class Map(val grid: IndexedSeq[IndexedSeq[Int]]):
       val current = toVisit.removeHead()
       if heightAt(current) == 9 then peaksFound += current
       else
-        val nextPoints = Seq(
-          Point(current.x, current.y - 1),
-          Point(current.x, current.y + 1),
-          Point(current.x - 1, current.y),
-          Point(current.x + 1, current.y)
-        )
-        for next <- nextPoints do
+        for next <- current.getNeighbours do
           if isOnGrid(next) && heightAt(next) == heightAt(current) + 1 && !visited.contains(next)
           then
             toVisit += next
@@ -41,6 +38,15 @@ class Map(val grid: IndexedSeq[IndexedSeq[Int]]):
     end while
     peaksFound.size
   end trailHeadScore
+
+  // Regular recursion is fine because know depth of trail is never more than 9 steps.
+  def trailHeadScore2(trailHead: Point): Int =
+    if heightAt(trailHead) == 9 then 1
+    else
+      trailHead.getNeighbours
+        .filter(p => isOnGrid(p) && heightAt(p) - heightAt(trailHead) == 1)
+        .map(trailHeadScore2)
+        .sum
 end Map
 
 object Map:
@@ -56,6 +62,13 @@ def part1(input: Seq[String]): Int =
   val scores     = trailHeads.map(map.trailHeadScore)
   scores.sum
 
+def part2(input: Seq[String]): Int =
+  val map        = Map.fromInput(input)
+  val trailHeads = map.trailHeads()
+  val scores     = trailHeads.map(map.trailHeadScore2)
+  scores.sum
+
 @main
 def day10(): Unit =
   println(s"Part 1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part 2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")
