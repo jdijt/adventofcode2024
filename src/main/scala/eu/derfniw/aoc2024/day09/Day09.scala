@@ -32,15 +32,6 @@ extension (c: CompactFs)
     case FsContent.File(_, id) => id
     case _                     => throw new RuntimeException("Unexpected empty")
 
-  def findFreeBlock(minSize: Int, maxIndex: Int): Option[(FsContent.Free, Int)] =
-    c.zipWithIndex
-      .filter(_._2 < maxIndex)
-      .find {
-        case (FsContent.Free(size), _) => size >= minSize
-        case _                         => false
-      }
-      .asInstanceOf[Option[(FsContent.Free, Int)]]
-
   def deFragment(): CompactFs =
     val mutableFs = mutable.ArrayDeque.from(c)
     for x <- c.lastFileId to 0 by -1 do
