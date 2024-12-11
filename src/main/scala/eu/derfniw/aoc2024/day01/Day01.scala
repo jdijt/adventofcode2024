@@ -6,10 +6,13 @@ import scala.math.abs
 
 object Inputs extends InputReader(1)
 
+val pairRegex = """(\d+) {3}(\d+)""".r
 def parseInput(input: Seq[String]): (Seq[Int], Seq[Int]) =
-  input.map(_.split(" {3}").map(_.toInt).toSeq).foldLeft((Seq.empty[Int], Seq.empty[Int])) {
-    case ((seq1, seq2), n1 +: n2 +: _) => (seq1 :+ n1, seq2 :+ n2)
-  }
+  input
+    .collect { case pairRegex(left, right) => (left.toInt, right.toInt) }
+    .foldLeft((Seq.empty, Seq.empty)) { case ((seq1, seq2), (left, right)) =>
+      (seq1 :+ left, seq2 :+ right)
+    }
 
 def part1(input: Seq[String]): Int =
   val (seq1, seq2) = parseInput(input)
