@@ -10,26 +10,20 @@ case class Point(x: Int, y: Int):
   def up: Point    = Point(x, y - 1)
   def down: Point  = Point(x, y + 1)
 
+  inline def getNeighbours: List[Point] =
+    List(Point(x, y - 1), Point(x, y + 1), Point(x - 1, y), Point(x + 1, y))
+
 class Grid(map: IndexedSeq[IndexedSeq[Char]]):
   private val ySize = map.size
   private val xSize = map.headOption.map(_.size).getOrElse(0)
 
-  private inline def isOnGrid(point: Point): Boolean   = isOnGrid(point.x, point.y)
   private inline def isOnGrid(x: Int, y: Int): Boolean = x >= 0 && x < xSize && y >= 0 && y < ySize
 
   inline def valueAt(point: Point): Char           = valueAt(point.x, point.y)
   private inline def valueAt(x: Int, y: Int): Char = if isOnGrid(x, y) then map(y)(x) else '.'
 
-  inline def getNeighbours(point: Point): List[Point] =
-    List(
-      Point(point.x, point.y - 1),
-      Point(point.x, point.y + 1),
-      Point(point.x - 1, point.y),
-      Point(point.x + 1, point.y)
-    )
-
   inline def getNeighbourValues(point: Point): List[(Point, Char)] =
-    getNeighbours(point).map(p => p -> valueAt(p))
+    point.getNeighbours.map(p => p -> valueAt(p))
 
   def regions: Seq[(Char, Seq[Point])] =
     val visited = mutable.Set.empty[Point]
@@ -76,25 +70,20 @@ def part1(input: Seq[String]): Int =
   }.sum
 end part1
 
-def splitEdges(edges: List[Point], grouper: Point => Int, sorter: Point => Int) = edges
-  .groupBy(grouper)
-  .values
-  .flatMap { pts =>
-    val sorted = pts.sortBy(sorter)
-    if sorted.size == 1 then Seq(sorted)
-    else
-      val jumpIndexes = 0 +: sorted
-        .sliding(2)
-        .zipWithIndex
-        .collect {
-          case (Seq(a, b), idx) if sorter(b) - sorter(a) != 1 => idx + 1
-        }
-        .toSeq
-        :+ sorted.size
-      jumpIndexes.sliding(2).map { case Seq(a, b) => sorted.slice(a, b + 1) }.toSeq
-    end if
-  }
-  .toSeq
+def splitEdges(edges: List[Point], sorter: Point => Int) =
+  val sorted = edges.sortBy(sorter)
+  if sorted.size == 1 then Seq(sorted)
+  else
+    val jumpIndexes = 0 +: sorted
+      .sliding(2)
+      .zipWithIndex
+      .collect {
+        case (Seq(a, b), idx) if sorter(b) - sorter(a) != 1 => idx + 1
+      }
+      .toSeq
+      :+ sorted.size
+    jumpIndexes.sliding(2).map { case Seq(a, b) => sorted.slice(a, b + 1) }.toSeq
+  end if
 end splitEdges
 
 def part2(input: Seq[String]): Int =
@@ -105,7 +94,8 @@ def part2(input: Seq[String]): Int =
     val (leftEdgeNodes, rightEdgeNodes, upEdgeNodes, downEdgeNodes) =
       region.foldLeft(
         (List.empty[Point], List.empty[Point], List.empty[Point], List.empty[Point])
-      ) { case ((left, right, up, down), point) =>
+      ) { (acc, point) =>
+        val (left, right, up, down) = acc
         (
           if grid.valueAt(point.left) != value then point :: left else left,
           if grid.valueAt(point.right) != value then point :: right else right,
@@ -115,11 +105,11 @@ def part2(input: Seq[String]): Int =
       }
 
     val size        = region.size
-    val leftEdges   = splitEdges(leftEdgeNodes, _.x, _.y)
-    val rightEdges  = splitEdges(rightEdgeNodes, _.x, _.y)
-    val topEdges    = splitEdges(upEdgeNodes, _.y, _.x)
-    val bottomEdges = splitEdges(downEdgeNodes, _.y, _.x)
-    val edgesCount  = leftEdges.size + rightEdges.size + topEdges.size + bottomEdges.size
+    val leftEdges   = leftEdgeNodes.groupBy(_.x).values.flatMap(es => splitEdges(es, _.y)).size
+    val rightEdges  = rightEdgeNodes.groupBy(_.x).values.flatMap(es => splitEdges(es, _.y)).size
+    val topEdges    = upEdgeNodes.groupBy(_.y).values.flatMap(es => splitEdges(es, _.x)).size
+    val bottomEdges = downEdgeNodes.groupBy(_.y).values.flatMap(es => splitEdges(es, _.x)).size
+    val edgesCount  = leftEdges + rightEdges + topEdges + bottomEdges
     size * edgesCount
   }.sum
 end part2
