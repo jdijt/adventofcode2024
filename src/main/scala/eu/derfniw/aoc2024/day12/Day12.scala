@@ -76,39 +76,49 @@ def part1(input: Seq[String]): Int =
   }.sum
 end part1
 
+def splitEdges(edges: List[Point], grouper: Point => Int, sorter: Point => Int) = edges
+  .groupBy(grouper)
+  .values
+  .flatMap { pts =>
+    val sorted = pts.sortBy(sorter)
+    if sorted.size == 1 then Seq(sorted)
+    else
+      val jumpIndexes = 0 +: sorted
+        .sliding(2)
+        .zipWithIndex
+        .collect {
+          case (Seq(a, b), idx) if sorter(b) - sorter(a) != 1 => idx + 1
+        }
+        .toSeq
+        :+ sorted.size
+      jumpIndexes.sliding(2).map { case Seq(a, b) => sorted.slice(a, b + 1) }.toSeq
+    end if
+  }
+  .toSeq
+end splitEdges
+
 def part2(input: Seq[String]): Int =
   val grid    = Grid.fromInput(input)
   val regions = grid.regions
 
   regions.map { case (value, region) =>
-    def getEdges(dir: Point => Point, grouper: Point => Int, sorter: Point => Int) =
-      region
-        .filter(p => grid.valueAt(dir(p)) != value)
-        .groupBy(grouper)
-        .values
-        .flatMap(pts =>
-          val sorted = pts.sortBy(sorter)
-          if sorted.size == 1 then Seq(sorted)
-          else
-            val jumpIndexes = 0 +: sorted
-              .sliding(2)
-              .zipWithIndex
-              .collect {
-                case (Seq(a, b), idx) if sorter(b) - sorter(a) != 1 => idx + 1
-              }
-              .toSeq
-              :+ sorted.size
-            jumpIndexes.sliding(2).map { case Seq(a, b) => sorted.slice(a, b + 1) }.toSeq
-          end if
+    val (leftEdgeNodes, rightEdgeNodes, upEdgeNodes, downEdgeNodes) =
+      region.foldLeft(
+        (List.empty[Point], List.empty[Point], List.empty[Point], List.empty[Point])
+      ) { case ((left, right, up, down), point) =>
+        (
+          if grid.valueAt(point.left) != value then point :: left else left,
+          if grid.valueAt(point.right) != value then point :: right else right,
+          if grid.valueAt(point.up) != value then point :: up else up,
+          if grid.valueAt(point.down) != value then point :: down else down
         )
-        .toSeq
-    end getEdges
+      }
 
     val size        = region.size
-    val leftEdges   = getEdges(dir = _.left, grouper = _.x, sorter = _.y)
-    val rightEdges  = getEdges(dir = _.right, grouper = _.x, sorter = _.y)
-    val topEdges    = getEdges(dir = _.up, grouper = _.y, sorter = _.x)
-    val bottomEdges = getEdges(dir = _.down, grouper = _.y, sorter = _.x)
+    val leftEdges   = splitEdges(leftEdgeNodes, _.x, _.y)
+    val rightEdges  = splitEdges(rightEdgeNodes, _.x, _.y)
+    val topEdges    = splitEdges(upEdgeNodes, _.y, _.x)
+    val bottomEdges = splitEdges(downEdgeNodes, _.y, _.x)
     val edgesCount  = leftEdges.size + rightEdges.size + topEdges.size + bottomEdges.size
     size * edgesCount
   }.sum
