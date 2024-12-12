@@ -4,7 +4,11 @@ import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
 import scala.collection.mutable
 
-case class Point(x: Int, y: Int)
+case class Point(x: Int, y: Int):
+  def left: Point  = Point(x - 1, y)
+  def right: Point = Point(x + 1, y)
+  def up: Point    = Point(x, y - 1)
+  def down: Point  = Point(x, y + 1)
 
 class Grid(map: IndexedSeq[IndexedSeq[Char]]):
   private val ySize = map.size
@@ -13,7 +17,7 @@ class Grid(map: IndexedSeq[IndexedSeq[Char]]):
   private inline def isOnGrid(point: Point): Boolean   = isOnGrid(point.x, point.y)
   private inline def isOnGrid(x: Int, y: Int): Boolean = x >= 0 && x < xSize && y >= 0 && y < ySize
 
-  private inline def valueAt(point: Point): Char   = valueAt(point.x, point.y)
+  inline def valueAt(point: Point): Char           = valueAt(point.x, point.y)
   private inline def valueAt(x: Int, y: Int): Char = if isOnGrid(x, y) then map(y)(x) else '.'
 
   inline def getNeighbours(point: Point): List[Point] =
@@ -54,7 +58,6 @@ class Grid(map: IndexedSeq[IndexedSeq[Char]]):
 
     regions.toSeq
   end regions
-
 end Grid
 
 object Grid:
@@ -73,11 +76,47 @@ def part1(input: Seq[String]): Int =
   }.sum
 end part1
 
-def part2(input: Seq[String]): Int = ???
+def part2(input: Seq[String]): Int =
+  val grid    = Grid.fromInput(input)
+  val regions = grid.regions
+
+  regions.map { case (value, region) =>
+    def getEdges(dir: Point => Point, grouper: Point => Int, sorter: Point => Int) =
+      region
+        .filter(p => grid.valueAt(dir(p)) != value)
+        .groupBy(grouper)
+        .values
+        .flatMap(pts =>
+          val sorted = pts.sortBy(sorter)
+          if sorted.size == 1 then Seq(sorted)
+          else
+            val jumpIndexes = 0 +: sorted
+              .sliding(2)
+              .zipWithIndex
+              .collect {
+                case (Seq(a, b), idx) if sorter(b) - sorter(a) != 1 => idx + 1
+              }
+              .toSeq
+              :+ sorted.size
+            jumpIndexes.sliding(2).map { case Seq(a, b) => sorted.slice(a, b + 1) }.toSeq
+          end if
+        )
+        .toSeq
+    end getEdges
+
+    val size        = region.size
+    val leftEdges   = getEdges(dir = _.left, grouper = _.x, sorter = _.y)
+    val rightEdges  = getEdges(dir = _.right, grouper = _.x, sorter = _.y)
+    val topEdges    = getEdges(dir = _.up, grouper = _.y, sorter = _.x)
+    val bottomEdges = getEdges(dir = _.down, grouper = _.y, sorter = _.x)
+    val edgesCount  = leftEdges.size + rightEdges.size + topEdges.size + bottomEdges.size
+    size * edgesCount
+  }.sum
+end part2
 
 object Inputs extends InputReader(12)
 
 @main
 def day11(): Unit =
   println(s"Part1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
-  // println(s"Part2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")
+  println(s"Part2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")
