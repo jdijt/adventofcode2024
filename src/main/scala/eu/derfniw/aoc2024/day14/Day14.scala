@@ -2,8 +2,8 @@ package eu.derfniw.aoc2024.day14
 
 import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
-case class Robot(x: Long, y: Long, dx: Long, dy: Long):
-  def move(tics: Long, xBorder: Long, yBorder: Long): Robot =
+case class Robot(x: Int, y: Int, dx: Int, dy: Int):
+  def move(tics: Int, xBorder: Int, yBorder: Int): Robot =
     val newX = (x + (dx * tics)) % xBorder
     val newY = (y + (dy * tics)) % yBorder
 
@@ -16,11 +16,11 @@ end Robot
 object Robot:
   private val linePattern = """p=(\d+),(\d+) v=(-?\d+),(-?\d+)""".r
   def fromLine(line: String): Robot = line match
-    case linePattern(x, y, dx, dy) => Robot(x.toLong, y.toLong, dx.toLong, dy.toLong)
+    case linePattern(x, y, dx, dy) => Robot(x.toInt, y.toInt, dx.toInt, dy.toInt)
 
-case class Grid(maxX: Long, maxY: Long, bots: Seq[Robot]):
+case class Grid(maxX: Int, maxY: Int, bots: Seq[Robot]):
 
-  def move(tics: Long): Grid =
+  def move(tics: Int): Grid =
     copy(bots = bots.map(_.move(tics, maxX, maxY)))
 
   def getQuadrantScore: Int =
@@ -43,9 +43,9 @@ case class Grid(maxX: Long, maxY: Long, bots: Seq[Robot]):
 
   def mkString: String =
     val ps = bots.groupBy(_.y).map((y, bots) => (y, bots.map(_.x).toSet))
-    (0 until maxY.toInt)
+    (0 until maxY)
       .map(y =>
-        (0 until maxX.toInt)
+        (0 until maxX)
           .map(x => if ps.contains(y) && ps(y).contains(x) then '#' else '.')
           .mkString
       )
@@ -69,7 +69,7 @@ def part2(maxX: Int, maxY: Int)(input: Seq[String]): String =
   // This holds because maxX and maxY are prime numbers (in all provided samples).
   val tics = 0 to maxX * maxY
   // Assumption: there are very few moments when all bots are in distinct locations.
-  //      One of these moments is when all bots are in the christmas tree shape
+  //      One of these moments is when all bots are in the Christmas tree shape
   "\n" + tics
     .map(t => (t, grid.move(t)))
     .filter((_, g) => g.noOverLap)
