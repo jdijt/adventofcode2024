@@ -39,5 +39,5 @@ end part2
 
 @main
 def day02(): Unit =
-  println(s"Part 1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
-  println(s"Part 2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")
+  println(s"Part 1: \n${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part 2: \n${runBenchmarked(Inputs.mainInput, part2).pretty}")

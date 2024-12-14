@@ -42,7 +42,7 @@ case class Grid(maxX: Long, maxY: Long, bots: Seq[Robot]):
     botPositions.size == bots.size
 
   def mkString: String =
-    val ps = bots.groupBy(_.y).map((y, bots) => (y, bots.map(_.x).toSet)).toMap
+    val ps = bots.groupBy(_.y).map((y, bots) => (y, bots.map(_.x).toSet))
     (0 until maxY.toInt)
       .map(y =>
         (0 until maxX.toInt)
@@ -80,5 +80,5 @@ end part2
 
 @main
 def day14(): Unit =
-  println(s"Part 1:\n ${runBenchmarked(Input.mainInput, part1(101, 103)).pretty}")
-  println(s"Part 2:\n ${runBenchmarked(Input.mainInput, part2(101, 103)).pretty}")
+  println(s"Part 1: \n${runBenchmarked(Input.mainInput, part1(101, 103)).pretty}")
+  println(s"Part 2: \n${runBenchmarked(Input.mainInput, part2(101, 103)).pretty}")

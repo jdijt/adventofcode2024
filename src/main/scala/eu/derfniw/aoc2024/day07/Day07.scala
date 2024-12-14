@@ -43,6 +43,6 @@ def part2(input: Seq[String]): Long =
 object Inputs extends InputReader(7)
 
 @main
-def day07: Unit =
-  println(s"Part1: ${runBenchmarked(Inputs.mainInput, part1).pretty}")
-  println(s"Part1: ${runBenchmarked(Inputs.mainInput, part2).pretty}")
+def day07(): Unit =
+  println(s"Part1: \n${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part1: \n${runBenchmarked(Inputs.mainInput, part2).pretty}")

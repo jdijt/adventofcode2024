@@ -95,5 +95,5 @@ object Input extends InputReader(9)
 
 @main
 def day09(): Unit =
-  println(s"Part 1:\n ${runBenchmarked(Input.mainInput, part1).pretty}")
-  println(s"Part 2:\n ${runBenchmarked(Input.mainInput, part2).pretty}")
+  println(s"Part 1: \n${runBenchmarked(Input.mainInput, part1).pretty}")
+  println(s"Part 2: \n${runBenchmarked(Input.mainInput, part2).pretty}")

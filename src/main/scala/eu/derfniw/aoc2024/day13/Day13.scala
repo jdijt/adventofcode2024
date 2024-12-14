@@ -35,9 +35,9 @@ object Game:
       .grouped(3)
       .map { ls =>
         val lines   = ls.toSeq
-        val buttonA = Button.fromLine(lines(0))
-        val buttonB = Button.fromLine(lines(1))
-        lines(2) match
+        val buttonA = Button.fromLine(lines.head)
+        val buttonB = Button.fromLine(lines.drop(1).head)
+        lines.last match
           case gameParser(priceX, priceY) => Game(buttonA, buttonB, priceX.toLong, priceY.toLong)
       }
       .toSeq
@@ -57,5 +57,5 @@ object Inputs extends InputReader(13)
 
 @main
 def day13(): Unit =
-  println(s"Part1:\n ${runBenchmarked(Inputs.mainInput, part1).pretty}")
-  println(s"Part2:\n ${runBenchmarked(Inputs.mainInput, part2).pretty}")
+  println(s"Part1: \n${runBenchmarked(Inputs.mainInput, part1).pretty}")
+  println(s"Part2: \n${runBenchmarked(Inputs.mainInput, part2).pretty}")
