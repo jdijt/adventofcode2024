@@ -2,8 +2,8 @@ package eu.derfniw.aoc2024.day16
 
 import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 
+import scala.collection.mutable
 import scala.collection.parallel.CollectionConverters.*
-import scala.util.Try
 
 enum Direction:
   case Up, Down, Left, Right
@@ -39,6 +39,8 @@ case class Point(x: Int, y: Int):
     case Direction.Right => Point(x + 1, y)
 
 class Maze(val map: IndexedSeq[IndexedSeq[MazeElement]]):
+  import Maze.{PointDir, given}
+
   val start: Point = map.zipWithIndex
     .flatMap { (row, y) =>
       row.zipWithIndex.collectFirst { case (MazeElement.Start, x) =>
@@ -59,31 +61,59 @@ class Maze(val map: IndexedSeq[IndexedSeq[MazeElement]]):
 
   def valueAt(p: Point): MazeElement = map(p.y)(p.x)
 
-  def cheapestRoute: Int =
-    val memory = collection.mutable.Map.empty[Point, Option[Int]]
-    def helper(position: Point, direction: Direction, visited: Set[Point]): Option[Int] =
-      if visited.contains(position) then None
-      else if memory.contains(position) then memory(position)
-      else
-        valueAt(position) match
-          case MazeElement.End  => Some(0)
-          case MazeElement.Wall => None
-          case MazeElement.Empty | MazeElement.Start =>
-            val newVisited = visited + position
-            val res = Try(
-              List(
-                (direction, 1),
-                (direction.rotateLeft, 1001),
-                (direction.rotateRight, 1001)
-              )
-                .flatMap((dir, cost) => helper(position.move(dir), dir, newVisited).map(_ + cost))
-                .min
-            ).toOption
-            memory.update(position, res)
-            res
+  def shortestPathToEnd: Int = dijkstra()._1
 
-    helper(start, Direction.Right, Set.empty).get
-  end cheapestRoute
+  def nodesOnShortestPaths: Int =
+    val (_, graph) = dijkstra()
+    val points     = mutable.Set(start)
+    val toProcess = mutable.ArrayDeque.from(graph.collect {
+      case (pd @ (p, _), _) if p == end => pd
+    }.toSeq)
+    val visited = mutable.Set.empty[PointDir]
+
+    while toProcess.nonEmpty do
+      val curPointDir = toProcess.removeHead()
+      if !visited.contains(curPointDir) then
+        visited.add(curPointDir)
+        val (curPoint, curDir) = curPointDir
+        points.add(curPoint)
+        graph(curPointDir).foreach(toProcess.append)
+      end if
+    end while
+    points.size
+  end nodesOnShortestPaths
+
+  private def dijkstra(
+      tentativeDistances: Map[(Point, Direction), Int] = Map((start, Direction.Right) -> 0)
+  ): (Int, Map[PointDir, Set[PointDir]]) =
+    val toProcess = mutable.PriorityQueue[(PointDir, Int)]((start, Direction.Right) -> 0)
+    val visited   = mutable.Set.empty[PointDir]
+    val distances = mutable.Map((start, Direction.Right) -> 0)
+    val prev      = mutable.Map.empty[PointDir, Set[PointDir]].withDefault(_ => Set.empty)
+
+    while toProcess.nonEmpty do
+      val (curPointDir, distance) = toProcess.dequeue()
+      if !visited.contains(curPointDir) then
+        visited.add(curPointDir)
+        val (curPoint, curDir) = curPointDir
+        List(
+          ((curPoint.move(curDir), curDir), 1),
+          ((curPoint.move(curDir.rotateLeft), curDir.rotateLeft), 1001),
+          ((curPoint.move(curDir.rotateRight), curDir.rotateRight), 1001)
+        ).filter { case (pd @ (p, _), _) =>
+          valueAt(p) != MazeElement.Wall && !visited.contains(pd)
+        }.foreach { case (pd, extraDistance) =>
+          val newDist = distance + extraDistance
+          if !distances.contains(pd) || newDist < distances(pd) then
+            distances(pd) = newDist
+            toProcess.enqueue((pd, newDist))
+            prev(pd) = Set(curPointDir)
+          else if newDist == distances(pd) then prev(pd) += curPointDir
+        }
+      end if
+    end while
+    (distances.collect { case ((p, _), d) if p == end => d }.min, prev.toMap)
+  end dijkstra
 end Maze
 
 object Maze:
@@ -91,10 +121,18 @@ object Maze:
     val map = input.map(_.map(MazeElement.fromChar).toIndexedSeq).toIndexedSeq
     Maze(map)
 
-def part1(input: Seq[String]): Int =
-  Maze.fromInput(input).cheapestRoute
+  private type PointDir = (Point, Direction)
+  private given Ordering[(PointDir, Int)] with
+    def compare(x: (PointDir, Int), y: (PointDir, Int)): Int =
+      // Note: this is _REVERSED_
+      y._2.compareTo(x._2)
+end Maze
 
-def part2(input: Seq[String]): Int = ???
+def part1(input: Seq[String]): Int =
+  Maze.fromInput(input).shortestPathToEnd
+
+def part2(input: Seq[String]): Int =
+  Maze.fromInput(input).nodesOnShortestPaths
 
 object Input extends InputReader(16)
 
