@@ -61,35 +61,10 @@ class Maze(val map: IndexedSeq[IndexedSeq[MazeElement]]):
 
   def valueAt(p: Point): MazeElement = map(p.y)(p.x)
 
-  def shortestPathToEnd: Int = dijkstra()._1
-
-  def nodesOnShortestPaths: Int =
-    val (_, graph) = dijkstra()
-    val points     = mutable.Set(start)
-    val toProcess = mutable.ArrayDeque.from(graph.collect {
-      case (pd @ (p, _), _) if p == end => pd
-    }.toSeq)
-    val visited = mutable.Set.empty[PointDir]
-
-    while toProcess.nonEmpty do
-      val curPointDir = toProcess.removeHead()
-      if !visited.contains(curPointDir) then
-        visited.add(curPointDir)
-        val (curPoint, curDir) = curPointDir
-        points.add(curPoint)
-        graph(curPointDir).foreach(toProcess.append)
-      end if
-    end while
-    points.size
-  end nodesOnShortestPaths
-
-  private def dijkstra(
-      tentativeDistances: Map[(Point, Direction), Int] = Map((start, Direction.Right) -> 0)
-  ): (Int, Map[PointDir, Set[PointDir]]) =
+  def shortestPathToEnd: Int =
     val toProcess = mutable.PriorityQueue[(PointDir, Int)]((start, Direction.Right) -> 0)
     val visited   = mutable.Set.empty[PointDir]
     val distances = mutable.Map((start, Direction.Right) -> 0)
-    val prev      = mutable.Map.empty[PointDir, Set[PointDir]].withDefault(_ => Set.empty)
 
     while toProcess.nonEmpty do
       val (curPointDir, distance) = toProcess.dequeue()
@@ -107,13 +82,59 @@ class Maze(val map: IndexedSeq[IndexedSeq[MazeElement]]):
           if !distances.contains(pd) || newDist < distances(pd) then
             distances(pd) = newDist
             toProcess.enqueue((pd, newDist))
-            prev(pd) = Set(curPointDir)
-          else if newDist == distances(pd) then prev(pd) += curPointDir
         }
       end if
     end while
-    (distances.collect { case ((p, _), d) if p == end => d }.min, prev.toMap)
-  end dijkstra
+    distances.collect { case ((p, _), d) if p == end => d }.min
+  end shortestPathToEnd
+
+  def positionsOnPath: Int =
+    val toProcess = mutable.PriorityQueue[(PointDir, Int)]((start, Direction.Right) -> 0)
+    val visited   = mutable.Set.empty[PointDir]
+    val distances = mutable.Map((start, Direction.Right) -> 0)
+    val previous  = mutable.Map.empty[PointDir, Set[PointDir]].withDefaultValue(Set.empty)
+
+    while toProcess.nonEmpty do
+      val (curPointDir, distance) = toProcess.dequeue()
+      if !visited.contains(curPointDir) then
+        visited.add(curPointDir)
+        val (curPoint, curDir) = curPointDir
+        List(
+          ((curPoint.move(curDir), curDir), 1),
+          ((curPoint.move(curDir.rotateLeft), curDir.rotateLeft), 1001),
+          ((curPoint.move(curDir.rotateRight), curDir.rotateRight), 1001)
+        ).filter { case (pd @ (p, _), _) =>
+          valueAt(p) != MazeElement.Wall && !visited.contains(pd)
+        }.foreach { case (pd, extraDistance) =>
+          val newDist = distance + extraDistance
+          if !distances.contains(pd) || newDist < distances(pd) then
+            distances(pd) = newDist
+            toProcess.enqueue((pd, newDist))
+            previous(pd) = Set(curPointDir)
+          else if newDist == distances(pd) then previous(pd) += curPointDir
+          end if
+        }
+      end if
+    end while
+    val (minPd, dist) = distances
+      .collect {
+        case (pd @ (p, _), d) if p == end => (pd, d)
+      }
+      .minBy(_._2)
+
+    val pointsToCheck = mutable.ArrayDeque(minPd)
+    val visitedPoints = mutable.Set(minPd)
+    while pointsToCheck.nonEmpty do
+      val curPd = pointsToCheck.removeHead()
+      previous(curPd).foreach { prevPd =>
+        if !visitedPoints.contains(prevPd) then
+          visitedPoints.add(prevPd)
+          pointsToCheck.addOne(prevPd)
+        end if
+      }
+    end while
+    visitedPoints.map(_._1).size
+  end positionsOnPath
 end Maze
 
 object Maze:
@@ -132,10 +153,11 @@ def part1(input: Seq[String]): Int =
   Maze.fromInput(input).shortestPathToEnd
 
 def part2(input: Seq[String]): Int =
-  Maze.fromInput(input).nodesOnShortestPaths
+  Maze.fromInput(input).positionsOnPath
 
 object Input extends InputReader(16)
 
 @main
 def day16(): Unit =
   println(s"Part1: \n${runBenchmarked(Input.mainInput, part1).pretty}")
+  println(s"Part2: \n${runBenchmarked(Input.mainInput, part2).pretty}")
