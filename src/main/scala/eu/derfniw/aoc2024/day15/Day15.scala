@@ -100,6 +100,10 @@ class Grid(val grid: IndexedSeq[IndexedSeq[Obj]], robot: Loc):
         case Obj.Wall  => Seq(Obj.Wall, Obj.Wall)
         case Obj.Robot => Seq(Obj.Robot, Obj.Empty)
         case Obj.Empty => Seq(Obj.Empty, Obj.Empty)
+        case _ =>
+          throw IllegalArgumentException(
+            "Found object belonging to expanded grid, cannot scale up grid twice!"
+          )
       }
     }
     val (rX, rY) = newGrid.zipWithIndex.flatMap { (row, y) =>
