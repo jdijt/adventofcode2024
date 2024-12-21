@@ -6,7 +6,7 @@ import scala.collection.mutable
 
 case class Point(x: Int, y: Int):
   def neighbours: List[Point] =
-    List(Point(x, y - 1), Point(x, y + 1), Point(x - 1, y), Point(x + 1, y))
+      List(Point(x, y - 1), Point(x, y + 1), Point(x - 1, y), Point(x + 1, y))
 
   def distance(p: Point): Int = (x - p.x).abs + (y - p.y).abs
 end Point
