@@ -6,13 +6,12 @@ import scala.collection.mutable
 
 class Graph(adjacent: Map[String, Set[String]]):
   def findCliques(size: Int): Set[Set[String]] =
-    adjacent.keySet.toIndexedSeq
-      .combinations(size)
-      .filter { case Seq(a, b, c) =>
-        // This works because we always insert both directions in the adjacency set.
-        adjacent(a).contains(b) && adjacent(b).contains(c) && adjacent(c).contains(a)
-      }
-      .map(_.toSet)
+    adjacent.keySet
+      .subsets(3)
+      //Vertexes don't point to themselves.
+      // so if the adjacency list intersected with subset is size - 1.
+      // Then the vertex we're checking is adjacent to all other vertices in the subset
+      .filter { ss => ss.forall( v => adjacent(v).intersect(ss).size == size - 1)}
       .toSet
 
   def findMaxClique: Set[String] =
@@ -24,15 +23,17 @@ class Graph(adjacent: Map[String, Set[String]]):
       if toVisit.isEmpty && toSkip.isEmpty then candidate
       else if toVisit.isEmpty then Set.empty
       else
-        // Pivot is the vertex with the smallest number of neighbors in the toVisit set.
         Set
           .unfold((toSkip, toVisit)) { (newToSkip, newToVisit) =>
             if newToVisit.isEmpty then None
             else
               val v   = newToVisit.head
               val nbs = adjacent(v)
-              val maxClique =
-                _findMaxClique(candidate + v, newToVisit.intersect(nbs), newToSkip.intersect(nbs))
+              val maxClique = _findMaxClique(
+                candidate + v,
+                newToVisit.intersect(nbs),
+                newToSkip.intersect(nbs)
+              )
               Some(maxClique, (newToSkip + v, newToVisit - v))
           }
           .maxBy(_.size)
@@ -65,4 +66,4 @@ object Input extends InputReader(23)
 @main
 def day23(): Unit =
   println(s"Part 1: \n${runBenchmarked(Input.mainInput, part1, 0).pretty}")
-  println(s"Part 2: \n${runBenchmarked(Input.mainInput, part2, 0).pretty}")
+  println(s"Part 2: \n${runBenchmarked(Input.mainInput, part2).pretty}")
