@@ -5,15 +5,35 @@ import eu.derfniw.aoc2024.util.{InputReader, runBenchmarked}
 import scala.collection.mutable
 
 class Graph(adjacent: Map[String, Set[String]]):
+  //This is a modified bron-kerbosh that collects
+  // all cliques of a given size
   def findCliques(size: Int): Set[Set[String]] =
-    adjacent.keySet
-      .subsets(3)
-      //Vertexes don't point to themselves.
-      // so if the adjacency list intersected with subset is size - 1.
-      // Then the vertex we're checking is adjacent to all other vertices in the subset
-      .filter { ss => ss.forall( v => adjacent(v).intersect(ss).size == size - 1)}
-      .toSet
+    def _findCliques(
+        candidate: Set[String],
+        toVisit: Set[String],
+        toSkip: Set[String]
+    ): Set[Set[String]] =
+      if candidate.size == size then Set(candidate)
+      else if toVisit.isEmpty then Set.empty
+      else
+        Set
+          .unfold((toSkip, toVisit)) { (newToSkip, newToVisit) =>
+            if newToVisit.isEmpty then None
+            else
+              val v   = newToVisit.head
+              val nbs = adjacent(v)
+              val cliques = _findCliques(
+                candidate + v,
+                newToVisit.intersect(nbs),
+                newToSkip.intersect(nbs)
+              )
+              Some(cliques, (newToSkip + v, newToVisit - v))
+          }
+          .flatten
+    _findCliques(Set.empty, adjacent.keySet, Set.empty)
+  end findCliques
 
+  //This is a modified bron-kerbosh that finds the maximum clique
   def findMaxClique: Set[String] =
     def _findMaxClique(
         candidate: Set[String],
@@ -65,5 +85,5 @@ object Input extends InputReader(23)
 
 @main
 def day23(): Unit =
-  println(s"Part 1: \n${runBenchmarked(Input.mainInput, part1, 0).pretty}")
+  println(s"Part 1: \n${runBenchmarked(Input.mainInput, part1).pretty}")
   println(s"Part 2: \n${runBenchmarked(Input.mainInput, part2).pretty}")
