@@ -50,18 +50,36 @@ class Circuit(val ops: Map[String, Op], val initialValues: Map[String, Boolean])
   lazy val zValue: Long = getNumber('z')
 
   // As the circuit should be a binary adder we can identify invalid links.
-  // The following links are valid:
-  //  zXX -> XOR <stuff>
-  //  AND -> XOR | AND
-  //  OR  -> AND
-  def findInvalidLinks: Set[String] = ops.collect {
-    case (wire, Op.And(_, _)) if outputs(wire)                          => wire
-    case (wire, Op.Or(_, _)) if outputs(wire)                           => wire
-    case (_, Op.Or(_, b)) if !ops(b).isInstanceOf[Op.And]               => b
-    case (_, Op.Or(a, _)) if !ops(a).isInstanceOf[Op.And]               => a
-    case (_, Op.Xor(_, b)) if !inputs(b) && ops(b).isInstanceOf[Op.And] => b
-    case (_, Op.And(a, _)) if !inputs(a) && ops(a).isInstanceOf[Op.And] => a
-  }.toSet - "z45" // exception, last output comes from "OR" as its carry.
+  // This has a bug where it misses one invalid link & marks another as invalid though it is valid.
+  // Solved the exercise by manually fixing that up.
+  def findInvalidLinks: Set[String] = ops.flatMap {
+    // Final carry comes from OR
+    case ("z45", Op.Or(_, _)) => Set()
+    // All other zXX come from XOR, anything else is wrong.
+    case (s"z$i", op) if i.toInt < 45 && !op.isInstanceOf[Op.Xor] => Set(s"z$i")
+    // AND cannot have AND as input.
+    case (_, Op.And(a, b)) =>
+      (ops.get(a), ops.get(b)) match
+        case (Some(Op.And(_, _)), Some(Op.And(_, _))) => Set(a, b)
+        case (Some(Op.And(_, _)), _)                  => Set(a)
+        case (_, Some(Op.And(_, _)))                  => Set(b)
+        case _                                        => Set()
+    // XOR cannot have AND as input
+    case (_, Op.Xor(a, b)) =>
+      (ops.get(a), ops.get(b)) match
+        case (Some(Op.And(_, _)), Some(Op.And(_, _))) => Set(a, b)
+        case (Some(Op.And(_, _)), _)                  => Set(a)
+        case (_, Some(Op.And(_, _)))                  => Set(b)
+        case _                                        => Set()
+    // OR can only have AND as input
+    case (_, Op.Or(a, b)) =>
+      (ops.get(a), ops.get(b)) match
+        case (Some(Op.And(_, _)), Some(Op.And(_, _))) => Set()
+        case (Some(Op.And(_, _)), _)                  => Set(b)
+        case (_, Some(Op.And(_, _)))                  => Set(a)
+        case _                                        => Set(a, b)
+    case _ => Seq()
+  }.toSet
 
 end Circuit
 
@@ -90,7 +108,14 @@ def part1(input: Seq[String]): Long =
   Circuit.fromInput(input).zValue
 
 def part2(input: Seq[String]): String =
-  Circuit.fromInput(input).findInvalidLinks.toList.sorted.mkString(",")
+  val circ = Circuit.fromInput(input)
+  println(
+  s"""
+   | digraph G {
+   | ${circ.ops.map { case (k, v) => s"""$k[label="${v.name}-$k"]; $k -> ${v.left}; $k -> ${v.right}; """ }.mkString}
+   | }
+   """.stripMargin)
+  circ.findInvalidLinks.toList.sorted.mkString(",")
 
 object Input extends InputReader(24)
 
